@@ -70,6 +70,9 @@
   a { color:var(--ink); }
   .hint { font-size:.85rem; color:var(--muted); margin-top:8px; }
 </style>
+<meta property="og:image" content="https://reelrank-seven.vercel.app/og.png">
+<meta name="twitter:image" content="https://reelrank-seven.vercel.app/og.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 </head>
 <body>
 <div class="wrap">
@@ -118,6 +121,7 @@
 <footer>
   Built by <a href="https://github.com/HVRGAMING2705">Vikranth Reddy</a> · B.Tech CSE (AI &amp; ML), Woxsen University ·
   <a href="https://github.com/HVRGAMING2705/reelrank">GitHub repo</a>
+<span class="fleet-legal" style="display:block;text-align:center;padding:10px 0;font-size:13px"><a href="/legal.html">Privacy · Terms</a></span>
 </footer>
 </div>
 
@@ -245,5 +249,6 @@ document.getElementById("surprise").addEventListener("click", () => {
 
 fetch("movies.json").then(r => r.json()).then(d => { DATA = d; }).catch(() => {});
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
