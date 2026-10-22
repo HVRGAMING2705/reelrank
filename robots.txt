@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://reelrank.vercel.app/sitemap.xml

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="google-site-verification" content="5EchCsH88JXnn0Mc55I8joYV6mial9rsc4G8c0eg4Ls" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReelRank — AI Movie Recommender</title>
+<meta name="description" content="ReelRank is a content-based movie recommendation engine. Pick 1–3 favorite movies and a real cosine-similarity model over 216 hand-built features (genres, keywords, era, runtime) ranks what you should watch next — all in your browser.">
+<link rel="canonical" href="https://reelrank.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ReelRank — AI Movie Recommender">
+<meta property="og:description" content="Pick 1–3 movies you love — a real content-based ML model ranks what to watch next. 100% in the browser.">
+<meta property="og:url" content="https://reelrank.vercel.app/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ReelRank — AI Movie Recommender">
+<meta name="twitter:description" content="Real content-based recommender (100% genre-agreement P@5 vs 28% random), running 100% in the browser.">
+<meta name="robots" content="index, follow">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication",
+"name":"ReelRank","applicationCategory":"EducationalApplication",
+"operatingSystem":"Web","description":"Content-based movie recommendation engine running entirely in the browser.",
+"author":{"@type":"Person","name":"Vikranth Reddy"}}
+</script>
+<style>
+  :root { --ink:#111; --muted:#555; --line:#e5e5e5; --bg:#ffffff; --card:#fafafa; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+         color:var(--ink); background:var(--bg); margin:0; line-height:1.6; }
+  .wrap { max-width:760px; margin:0 auto; padding:32px 20px 64px; }
+  header { border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:28px; }
+  h1 { font-size:2rem; margin:0 0 4px; letter-spacing:-0.5px; }
+  .tag { color:var(--muted); margin:0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px; margin:18px 0; }
+  button { background:var(--ink); color:#fff; border:0; border-radius:8px; padding:12px 26px;
+           font-size:1rem; cursor:pointer; margin-top:12px; }
+  button:hover { background:#333; }
+  button.ghost { background:#fff; color:var(--ink); border:1px solid var(--line);
+                 padding:8px 14px; font-size:.9rem; margin:6px 6px 0 0; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  input[type=text] { width:100%; padding:11px 14px; font-size:1rem; border:1px solid var(--line);
+                     border-radius:8px; margin-top:8px; }
+  #sugg { border:1px solid var(--line); border-radius:8px; margin-top:6px; max-height:220px;
+          overflow-y:auto; background:#fff; display:none; }
+  #sugg div { padding:9px 14px; cursor:pointer; font-size:.95rem; border-bottom:1px solid #f3f3f3; }
+  #sugg div:hover { background:#f6f6f6; }
+  #sugg .y { color:var(--muted); font-size:.85rem; }
+  .chips { margin-top:10px; }
+  .chip { display:inline-block; background:#111; color:#fff; border-radius:20px;
+          padding:7px 8px 7px 16px; margin:0 8px 8px 0; font-size:.9rem; }
+  .chip button { background:transparent; color:#fff; border:0; padding:0 8px 0 6px;
+                 font-size:1rem; cursor:pointer; margin:0; }
+  .sliderow { display:flex; align-items:center; gap:12px; margin-top:14px; }
+  .sliderow input[type=range] { flex:1; accent-color:#111; }
+  #countval { font-weight:700; min-width:28px; }
+  .rec { border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin:10px 0;
+         background:#fff; }
+  .rec .t { font-weight:700; font-size:1.05rem; }
+  .rec .y { color:var(--muted); font-size:.85rem; }
+  .rec .why { font-size:.88rem; color:var(--muted); margin-top:4px; }
+  .prow { display:flex; align-items:center; gap:8px; margin:8px 0 2px; font-size:.92rem; }
+  .prow .barw { flex:1; height:12px; background:#eee; border-radius:6px; overflow:hidden; }
+  .prow .fill { height:100%; width:0%; background:var(--ink); transition:width .3s; }
+  .prow .p { width:56px; text-align:right; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:600px){ .grid{grid-template-columns:1fr;} }
+  h2 { font-size:1.3rem; margin:28px 0 8px; }
+  code { background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:.9em; }
+  footer { border-top:1px solid var(--line); margin-top:40px; padding-top:16px;
+           color:var(--muted); font-size:.9rem; }
+  a { color:var(--ink); }
+  .hint { font-size:.85rem; color:var(--muted); margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>ReelRank 🎬</h1>
+  <p class="tag">AI movie recommender — by Vikranth Reddy</p>
+</header>
+
+<section class="card">
+  <h2 style="margin-top:0">What should you watch next?</h2>
+  <p>Pick <b>1–3 movies you love</b>. ReelRank builds your taste profile (the mean of their 216-feature vectors) and ranks all 64 movies by <b>cosine similarity</b> — genre one-hot (×2), keywords, era and runtime — no backend, no API calls.</p>
+  <input type="text" id="search" placeholder="Type a movie name…" autocomplete="off">
+  <div id="sugg"></div>
+  <div class="chips" id="chips"></div>
+  <div class="sliderow">
+    <label for="count">Recommendations:</label>
+    <input type="range" id="count" min="3" max="12" value="5">
+    <span id="countval">5</span>
+  </div>
+  <div>
+    <button id="go">Get recommendations</button>
+    <button class="ghost" id="surprise">🎲 Surprise me</button>
+  </div>
+  <div class="hint">Pick at least 1 movie (max 3), then hit the button.</div>
+</section>
+
+<section id="results" style="display:none">
+  <h2>Top picks for you</h2>
+  <div id="recs"></div>
+</section>
+
+<section>
+  <h2>How it works</h2>
+  <div class="grid">
+    <div class="card"><b>1. Catalog</b><br>64 synthetic movies (1990–2026) with 12 genres, keyword tags, era bins (90s/2000s/2010s/2020s) and runtime bins (&lt;100 / 100–140 / &gt;140 min).</div>
+    <div class="card"><b>2. Features</b><br>Each movie becomes a 216-dim vector: genre one-hot (weight ×2), keyword one-hot, era one-hot, runtime one-hot — then L2-normalized.</div>
+    <div class="card"><b>3. Query</b><br>Your picks are averaged into one "taste profile" vector (also L2-normalized). Cosine similarity to every other movie gives the ranking — the exact same math train.py uses.</div>
+    <div class="card"><b>4. Evaluated</b><br>Mean genre-agreement precision@5 of <b>100.0%</b> over all 64 movies (vs <b>27.8%</b> for a random recommender — 3.6× lift).</div>
+  </div>
+  <h2>Tech stack</h2>
+  <p>Python · NumPy · vanilla JavaScript · static hosting (Vercel)</p>
+  <h2>Files in this repo</h2>
+  <p><code>train.py</code> — catalog, features, evaluation, movies.json export (+ JS parity check) · <code>movies.json</code> — 64 movies + 216-dim feature matrix · <code>index.html</code> — this demo · <code>vercel.json</code> — security headers</p>
+</section>
+
+<footer>
+  Built by <a href="https://github.com/HVRGAMING2705">Vikranth Reddy</a> · B.Tech CSE (AI &amp; ML), Woxsen University ·
+  <a href="https://github.com/HVRGAMING2705/reelrank">GitHub repo</a>
+</footer>
+</div>
+
+<script>
+let DATA = null;
+let picks = [];   // indices into DATA.movies, max 3
+
+const search = document.getElementById("search");
+const sugg = document.getElementById("sugg");
+const chips = document.getElementById("chips");
+
+function norm(v) {
+  let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1;
+  return v.map(x => x / s);
+}
+
+function profileVec() {
+  const d = DATA.features[0].length;
+  const p = new Array(d).fill(0);
+  for (const i of picks) for (let k = 0; k < d; k++) p[k] += DATA.features[i][k];
+  for (let k = 0; k < d; k++) p[k] /= picks.length;
+  return norm(p);
+}
+
+function recommend(topN) {
+  const p = profileVec();
+  const picked = new Set(picks);
+  const scored = [];
+  DATA.features.forEach((f, i) => {
+    if (picked.has(i)) return;
+    let dot = 0;
+    for (let k = 0; k < p.length; k++) dot += f[k] * p[k];
+    scored.push([dot, i]);
+  });
+  scored.sort((a, b) => b[0] - a[0]);
+  return scored.slice(0, topN);
+}
+
+function sharedGenres(qIdxs, i) {
+  const q = new Set();
+  qIdxs.forEach(j => DATA.movies[j].genres.forEach(g => q.add(g)));
+  return DATA.movies[i].genres.filter(g => q.has(g));
+}
+
+function renderChips() {
+  chips.innerHTML = "";
+  picks.forEach(i => {
+    const c = document.createElement("span");
+    c.className = "chip";
+    c.textContent = DATA.movies[i].title;
+    const x = document.createElement("button");
+    x.textContent = "✕"; x.title = "Remove";
+    x.addEventListener("click", () => { picks = picks.filter(j => j !== i); renderChips(); });
+    c.appendChild(x);
+    chips.appendChild(c);
+  });
+  search.value = "";
+  sugg.style.display = "none";
+}
+
+function showRecs(topN) {
+  if (!DATA) return;
+  const recs = recommend(topN);
+  const qTitles = picks.map(i => DATA.movies[i].title).join(" + ");
+  const box = document.getElementById("recs");
+  box.innerHTML = "";
+  recs.forEach(([sim, i]) => {
+    const m = DATA.movies[i];
+    const shared = sharedGenres(picks, i);
+    const div = document.createElement("div");
+    div.className = "rec";
+    div.innerHTML = `<div class="t">${m.title} <span class="y">(${m.year})</span></div>
+      <div class="prow"><span class="barw"><span class="fill" style="width:${(sim * 100).toFixed(1)}%"></span></span>
+      <span class="p">${(sim * 100).toFixed(1)}%</span></div>
+      <div class="why">Shares ${shared.length ? shared.join(", ") : "no genres"} with your pick${picks.length > 1 ? "s" : ""} · ${m.genres.join(" / ")} · ${m.keywords.slice(0, 4).join(", ")}</div>`;
+    box.appendChild(div);
+  });
+  document.getElementById("results").style.display = "block";
+  document.getElementById("results").scrollIntoView({ behavior: "smooth" });
+}
+
+search.addEventListener("input", () => {
+  const q = search.value.trim().toLowerCase();
+  if (!DATA || q.length < 2) { sugg.style.display = "none"; return; }
+  const hits = [];
+  DATA.movies.forEach((m, i) => {
+    if (hits.length >= 8) return;
+    if (!picks.includes(i) && m.title.toLowerCase().includes(q)) hits.push(i);
+  });
+  sugg.innerHTML = "";
+  if (!hits.length) { sugg.style.display = "none"; return; }
+  hits.forEach(i => {
+    const m = DATA.movies[i];
+    const d = document.createElement("div");
+    d.innerHTML = `${m.title} <span class="y">(${m.year}) · ${m.genres.join("/")}</span>`;
+    d.addEventListener("click", () => {
+      if (picks.length < 3) picks.push(i);
+      renderChips();
+    });
+    sugg.appendChild(d);
+  });
+  sugg.style.display = "block";
+});
+
+document.getElementById("count").addEventListener("input", e => {
+  document.getElementById("countval").textContent = e.target.value;
+});
+
+document.getElementById("go").addEventListener("click", () => {
+  if (!picks.length) { alert("Pick at least 1 movie first — use the search box above."); return; }
+  showRecs(parseInt(document.getElementById("count").value, 10));
+});
+
+document.getElementById("surprise").addEventListener("click", () => {
+  const n = 1 + Math.floor(Math.random() * 3);
+  const pool = DATA.movies.map((_, i) => i);
+  for (let k = pool.length - 1; k > 0; k--) {
+    const j = Math.floor(Math.random() * (k + 1));
+    [pool[k], pool[j]] = [pool[j], pool[k]];
+  }
+  picks = pool.slice(0, n);
+  renderChips();
+  showRecs(parseInt(document.getElementById("count").value, 10));
+});
+
+fetch("movies.json").then(r => r.json()).then(d => { DATA = d; }).catch(() => {});
+</script>
+</body>
+</html>
