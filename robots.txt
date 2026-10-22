@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://reelrank.vercel.app/sitemap.xml
+Sitemap: https://reelrank-seven.vercel.app/sitemap.xml
